@@ -1,2 +1,2 @@
 # prevent commits of credentials
-credentials.ts
+credentials.*
