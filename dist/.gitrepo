@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/pmalacho-mit/zoom-sdk-suede
+	branch = dist
+	commit = fbc5158eaf0c736c43ff3266bdbe41aec845ac84
+	parent = 78d294a9a4e19dc0526be1b820efc07555f6a61a
+	method = merge
+	cmdver = 0.4.9
