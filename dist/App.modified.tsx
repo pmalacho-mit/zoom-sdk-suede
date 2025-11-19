@@ -15,7 +15,7 @@ import ZoomVideo, {
   type VideoPlayer,
   ConnectionState,
   ReconnectReason,
-  MediaSDKEncDecPayload,
+  type MediaSDKEncDecPayload,
 } from "@zoom/videosdk";
 import { message, Modal } from "antd";
 import "antd/dist/antd.min.css";
@@ -30,7 +30,7 @@ import type { MediaStream, ZoomClient } from "./index-types";
 
 type CustomElement<T> = Partial<T & DOMAttributes<T> & { children: any }>;
 
-interface AppProps {
+export interface AppProps {
   meetingArgs: {
     topic: string;
     signature: string;
