@@ -6,7 +6,7 @@
 [subrepo]
 	remote = https://github.com/pmalacho-mit/zoom-sdk-suede
 	branch = dist
-	commit = fbc5158eaf0c736c43ff3266bdbe41aec845ac84
-	parent = 78d294a9a4e19dc0526be1b820efc07555f6a61a
+	commit = 08aba342f089cac04ad45929d5c320736807892e
+	parent = 455d51ad1098fd8406843d89ac6ae79601e5753c
 	method = merge
 	cmdver = 0.4.9
