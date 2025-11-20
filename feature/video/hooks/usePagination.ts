@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { maxViewportVideoCounts } from '../video-layout-helper';
 import { useMount } from '../../../hooks';
-import { Dimension } from '../video-types';
-import { ZoomClient } from '../../../index-types';
+import type { Dimension } from '../video-types';
+import type { ZoomClient } from '../../../index-types';
 const MAX_NUMBER_PER_PAGE = 9;
 // eslint-disable-next-line import/prefer-default-export
 export function usePagination(zmClient: ZoomClient, dimension: Dimension) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Participant } from '../../../index-types';
+import type { Participant } from '../../../index-types';
 
 interface FeatureSwitch {
   toggled: boolean;

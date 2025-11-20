@@ -1,7 +1,6 @@
 /* eslint-disable no-restricted-globals */
 import React from "react";
 import ZoomVideo from "@zoom/videosdk";
-import "./index.css";
 import App, { type AppProps } from "./App.modified";
 import ZoomContext from "./context/zoom-context";
 

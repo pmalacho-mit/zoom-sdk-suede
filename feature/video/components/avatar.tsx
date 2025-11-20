@@ -4,7 +4,7 @@ import type { NetworkQuality } from '@zoom/videosdk';
 import { IconFont } from '../../../component/icon-font';
 import classNames from 'classnames';
 import './avatar.scss';
-import { Participant } from '../../../index-types';
+import type { Participant } from '../../../index-types';
 import { useHover } from '../../../hooks';
 import AvatarMore from './avatar-more';
 interface AvatarProps {

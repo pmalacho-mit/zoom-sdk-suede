@@ -9,3 +9,11 @@ const dirname =
 export default dirname;
 
 export const suederoot = path.resolve(dirname, "../");
+
+/**
+ *
+ * @param  {string[]} segments
+ * @returns {string}
+ */
+export const fromSuedeRoot = (...segments) =>
+  path.resolve(suederoot, ...segments);
