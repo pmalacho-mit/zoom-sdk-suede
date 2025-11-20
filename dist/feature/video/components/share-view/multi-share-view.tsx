@@ -1,49 +1,29 @@
-import {
-  useRef,
-  useContext,
-  useCallback,
-  useEffect,
-  forwardRef,
-  useImperativeHandle,
-  useMemo,
-} from "react";
-import classnames from "classnames";
-import _ from "lodash";
-import ShareBar from "../share-bar";
-import ZoomContext from "../../../../context/zoom-context";
-import ZoomMediaContext from "../../../../context/media-context";
-import type { VideoPlayer } from "@zoom/videosdk";
-import { usePrevious } from "../../../../hooks";
-import "./share-view.scss";
-import type { ShareViewProps } from "./share-view-types";
-import { useMultiShare } from "../../hooks/useMultiShare";
+import { useRef, useContext, useCallback, useEffect, forwardRef, useImperativeHandle, useMemo } from 'react';
+import classnames from 'classnames';
+import _ from 'lodash';
+import ShareBar from '../share-bar';
+import ZoomContext from '../../../../context/zoom-context';
+import ZoomMediaContext from '../../../../context/media-context';
+import type { VideoPlayer } from '@zoom/videosdk';
+import { usePrevious } from '../../../../hooks';
+import './share-view.scss';
+import type { ShareViewProps } from './share-view-types';
+import { useMultiShare } from '../../hooks/useMultiShare';
 
 const MultiShareView = forwardRef((props: ShareViewProps, ref: any) => {
   const { onRecieveSharingChange } = props;
   const zmClient = useContext(ZoomContext);
   const { mediaStream } = useContext(ZoomMediaContext);
-  const selfShareViewRef = useRef<
-    (HTMLCanvasElement & HTMLVideoElement) | null
-  >(null);
+  const selfShareViewRef = useRef<(HTMLCanvasElement & HTMLVideoElement) | null>(null);
   const videoPlayerListRef = useRef<Record<string, VideoPlayer>>({});
-  const { isRecieveSharing, shareUserList } = useMultiShare(
-    zmClient,
-    mediaStream
-  );
-  const shareUserIdList = useMemo(
-    () => shareUserList.map((user) => user.userId),
-    [shareUserList]
-  );
+  const { isRecieveSharing, shareUserList } = useMultiShare(zmClient, mediaStream);
+  const shareUserIdList = useMemo(() => shareUserList.map((user) => user.userId), [shareUserList]);
   const previousShareUserIdList = usePrevious(shareUserIdList);
   useEffect(() => {
     const handleShareUserChanges = async () => {
       if (!_.isEqual(shareUserIdList, previousShareUserIdList)) {
-        const addedUsers = shareUserIdList.filter(
-          (user) => !(previousShareUserIdList ?? []).includes(user)
-        );
-        const removedUsers = (previousShareUserIdList ?? []).filter(
-          (user) => !shareUserIdList.includes(user)
-        );
+        const addedUsers = shareUserIdList.filter((user) => !(previousShareUserIdList ?? []).includes(user));
+        const removedUsers = (previousShareUserIdList ?? []).filter((user) => !shareUserIdList.includes(user));
         if (removedUsers.length > 0) {
           await Promise.all(
             removedUsers.map(async (userId) => {
@@ -63,23 +43,16 @@ const MultiShareView = forwardRef((props: ShareViewProps, ref: any) => {
     };
     handleShareUserChanges();
   }, [mediaStream, shareUserIdList, previousShareUserIdList]);
-  const setVideoPlayerRef = useCallback(
-    (userId: number, element: VideoPlayer | null) => {
-      if (element) {
-        videoPlayerListRef.current[`${userId}`] = element;
-      }
-    },
-    []
-  );
-  useImperativeHandle(
-    ref,
-    () => {
-      return {
-        selfShareRef: selfShareViewRef.current,
-      };
-    },
-    []
-  );
+  const setVideoPlayerRef = useCallback((userId: number, element: VideoPlayer | null) => {
+    if (element) {
+      videoPlayerListRef.current[`${userId}`] = element;
+    }
+  }, []);
+  useImperativeHandle(ref, () => {
+    return {
+      selfShareRef: selfShareViewRef.current
+    };
+  }, []);
   const [columns, rows] = useMemo(() => {
     const count = shareUserList.length;
     let [c, r] = [0, 0];
@@ -105,8 +78,8 @@ const MultiShareView = forwardRef((props: ShareViewProps, ref: any) => {
     <>
       <ShareBar ref={selfShareViewRef} />
       <div
-        className={classnames("share-view", {
-          "share-view-in-sharing": isRecieveSharing,
+        className={classnames('share-view', {
+          'share-view-in-sharing': isRecieveSharing
         })}
       >
         <video-player-container class="share-view-container">
@@ -114,7 +87,7 @@ const MultiShareView = forwardRef((props: ShareViewProps, ref: any) => {
             className="share-view-list"
             style={{
               gridTemplateColumns: `repeat(${columns}, minmax(128px, 1fr))`,
-              gridTemplateRows: `repeat(${rows}, auto)`,
+              gridTemplateRows: `repeat(${rows}, auto)`
             }}
           >
             {shareUserList.map((user) => {

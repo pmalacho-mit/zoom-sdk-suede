@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Zoom from "$dist/Zoom.svelte";
 </script>
 
 <h1>Welcome to SvelteKit</h1>

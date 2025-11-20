@@ -8,10 +8,15 @@ REACT_ROUTER_STUB_PATH="$DEST_DIR/react-router.stub.ts"
 # Array of supported react-router functions
 SUPPORTED_REACT_ROUTER_IMPORTS=("useSearchParams")
 
+is_processable_file() {
+  local file_path="$1"
+  [[ "$file_path" =~ \.(tsx?|jsx?)$ ]]
+}
+
 process_react_router_imports() {
   local file_path="$1"
   
-  if [[ ! "$file_path" =~ \.(tsx?|jsx?)$ ]]; then
+  if ! is_processable_file "$file_path"; then
     return
   fi
   
@@ -64,6 +69,61 @@ process_react_router_imports() {
   echo "  → Replaced react-router import with relative import: $rel_path"
 }
 
+process_dts_imports() {
+  local file_path="$1"
+  
+  if ! is_processable_file "$file_path"; then
+    return
+  fi
+  
+  # Get the directory of the current file
+  local file_dir=$(dirname "$file_path")
+  
+  # Find all import lines with relative paths
+  while IFS= read -r import_line; do
+    # Skip if it already uses 'import type'
+    if echo "$import_line" | grep -q "^[[:space:]]*import[[:space:]]\+type[[:space:]]"; then
+      continue
+    fi
+    
+    # Extract the import path (handle both single and double quotes)
+    local import_path=$(echo "$import_line" | sed -n "s/.*from ['\"\]\([^'\"]*\)['\"].*/\1/p")
+    
+    if [ -z "$import_path" ]; then
+      continue
+    fi
+    
+    # Only process relative imports (starting with . or ..)
+    if [[ ! "$import_path" =~ ^\. ]]; then
+      continue
+    fi
+    
+    # Resolve the absolute path of the imported file
+    local resolved_path=$(cd "$file_dir" && realpath -m "${import_path}")
+    
+    # Try common extensions to find the actual file
+    local actual_file=""
+    for ext in ".d.ts" ".ts" ".tsx" ".js" ".jsx"; do
+      if [ -f "${resolved_path}${ext}" ]; then
+        actual_file="${resolved_path}${ext}"
+        break
+      fi
+    done
+    
+    # Check if the resolved file is a .d.ts file
+    if [[ "$actual_file" =~ \.d\.ts$ ]]; then
+      # Create the replacement line by inserting 'type' after 'import'
+      local escaped_import_line=$(echo "$import_line" | sed 's/[\/&]/\\&/g')
+      local new_import_line=$(echo "$import_line" | sed 's/^\([[:space:]]*import\)[[:space:]]\+/\1 type /')
+      local escaped_new_import_line=$(echo "$new_import_line" | sed 's/[\/&]/\\&/g')
+      
+      # Replace the line in the file
+      sed -i "s/^${escaped_import_line}$/${escaped_new_import_line}/" "$file_path"
+      echo "  → Converted to import type: $import_path (resolves to .d.ts)"
+    fi
+  done < <(grep -E "^[[:space:]]*import[[:space:]]+.*from[[:space:]]+['\"]" "$file_path" || true)
+}
+
 if [ ! -d "$REFERENCE_DIR/node_modules" ]; then
   echo "Installing dependencies in $REFERENCE_DIR..."
   npm install --prefix "$REFERENCE_DIR"
@@ -77,7 +137,6 @@ fi
 # Map of source directories/files to destination paths
 declare -A FILE_MAP=(
   # Custom remappings (built assets)
-  ["dist/lib"]="assets/lib"
   ["dist/assets/processors"]="assets/static/processors"
 )
 
@@ -192,11 +251,13 @@ for source_path in "${!FILE_MAP[@]}"; do
       # Process react-router imports in all files in the directory
       find "$full_dest" -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) | while read -r file; do
         process_react_router_imports "$file"
+        process_dts_imports "$file"
       done
     else
       echo "Copying file: $source_path -> $dest_path"
       cp "$full_source" "$full_dest"
       process_react_router_imports "$full_dest"
+      process_dts_imports "$full_dest"
     fi
   else
     echo "Warning: $full_source does not exist, skipping..."
