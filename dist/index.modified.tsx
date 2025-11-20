@@ -1,17 +1,15 @@
 /* eslint-disable no-restricted-globals */
 import React from "react";
-import ZoomVideo from "@zoom/videosdk";
+import type { VideoClient } from "@zoom/videosdk";
 import App, { type AppProps } from "./App.modified";
 import ZoomContext from "./context/zoom-context";
 
-const zmClient = ZoomVideo.createClient();
+export type Props = AppProps & { zoomClient: typeof VideoClient };
 
-export type Props = AppProps;
-
-export const Wrapper = (props: Props) => {
+export const Wrapper = ({ zoomClient, ...props }: Props) => {
   return (
     <React.StrictMode>
-      <ZoomContext.Provider value={zmClient}>
+      <ZoomContext.Provider value={zoomClient}>
         <App {...props} />
       </ZoomContext.Provider>
     </React.StrictMode>

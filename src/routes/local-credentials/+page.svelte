@@ -3,21 +3,29 @@
   // `export const sdk = { key: "...", secret: "..." }`
   import { sdk } from "./credentials";
   import { generateVideoToken } from "$dist/utils/util";
-  import Zoom from "$dist/Zoom.svelte";
+  import Zoom, { type Controls } from "$dist/Zoom.svelte";
 
   let name = $state(
     `User_${Math.random().toString(36).substring(2, 8)}_${navigator.userAgent}`
   );
   let topic = $state("Local Credentials Test");
   const signature = $derived(generateVideoToken(sdk.key, sdk.secret, topic));
+
+  let settings = $state<(keyof Controls)[]>([]);
+  const controls = $derived(
+    settings.reduce((acc, curr) => ({ ...acc, [curr]: true }), {} as Controls)
+  );
+
+  $inspect(controls);
 </script>
 
-<center>
-  <iframe
-    style:height="75%"
-    style:width="75%"
-    title="using zoom component in iframe"
-    src={`/iframe-target?name=${encodeURIComponent(name)}&topic=${encodeURIComponent(topic)}&signature=${encodeURIComponent(signature)}`}
-  >
-  </iframe>
+<center style:height="100vh" style:width="100vw">
+  <select name="cars" id="cars" multiple bind:value={settings}>
+    {#each ["liveBroadcast", "liveTranscription", "microphone", "video", "recording", "screenShare"] satisfies (keyof Controls)[] as control}
+      <option value={control}>{control}</option>
+    {/each}
+  </select>
+  <div style:height="15%" style:width="75%">
+    <Zoom meetingArgs={{ name, topic, signature }} {controls} />
+  </div>
 </center>
