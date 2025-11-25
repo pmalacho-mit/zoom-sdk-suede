@@ -770,7 +770,7 @@ const VideoFooter = (props: VideoFooterProps) => {
   return (
     <div className={classNames("video-footer", className)}>
       {isAudioEnable && (
-        <span id="microphone-button" className="video-tool">
+        <span id="microphone-button" className="zoom-footer-control">
           <MicrophoneButton
             isStartedAudio={isStartedAudio}
             isMuted={isMuted}
@@ -795,7 +795,7 @@ const VideoFooter = (props: VideoFooterProps) => {
           />
         </span>
       )}
-      <span id="camera-button" className="video-tool">
+      <span id="camera-button" className="zoom-footer-control">
         <CameraButton
           isStartedVideo={isStartedVideo}
           onCameraClick={onCameraClick}
@@ -818,7 +818,7 @@ const VideoFooter = (props: VideoFooterProps) => {
         />
       </span>
       {sharing && (
-        <span id="screen-share-button" className="video-tool">
+        <span id="screen-share-button" className="zoom-footer-control">
           <ScreenShareButton
             sharePrivilege={sharePrivilege}
             isHostOrManager={zmClient.isHost() || zmClient.isManager()}
@@ -836,7 +836,7 @@ const VideoFooter = (props: VideoFooterProps) => {
             <span
               id={`recording-button-${button.text.toLowerCase()}`}
               key={button.text}
-              className="video-tool"
+              className="zoom-footer-control"
             >
               <RecordingButton
                 key={button.text}
@@ -851,7 +851,7 @@ const VideoFooter = (props: VideoFooterProps) => {
       {liveTranscriptionClient?.getLiveTranscriptionStatus()
         .isLiveTranscriptionEnabled && (
         <>
-          <span id="transcription-button" className="video-tool">
+          <span id="transcription-button" className="zoom-footer-control">
             <LiveTranscriptionButton isHost={zmClient.isHost()} />
           </span>
           <TranscriptionSubtitle
@@ -882,7 +882,7 @@ const VideoFooter = (props: VideoFooterProps) => {
       {/** Broadcast streaming */}
       {broadcastStreamClient.isBroadcastStreamingEnable() &&
         zmClient.isHost() && (
-          <span id="live-broadcast-button" className="video-tool">
+          <span id="live-broadcast-button" className="zoom-footer-control">
             <LiveStreamButton
               isLiveStreamOn={
                 broadcastStreamStatus === BroadcastStreamingStatus.InProgress
@@ -915,11 +915,13 @@ const VideoFooter = (props: VideoFooterProps) => {
           />
         </Tooltip>
       )}
-      <LeaveButton
-        onLeaveClick={onLeaveClick}
-        isHost={zmClient.isHost()}
-        onEndClick={onEndClick}
-      />
+      <span id="leave-button" className="zoom-footer-control">
+        <LeaveButton
+          onLeaveClick={onLeaveClick}
+          isHost={zmClient.isHost()}
+          onEndClick={onEndClick}
+        />
+      </span>
 
       <AudioVideoStatisticModal
         visible={statisticVisible}

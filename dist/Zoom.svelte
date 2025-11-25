@@ -1,16 +1,8 @@
 <script lang="ts" module>
   import type { Props as WrapperProps } from "./index.modified";
+  import type { VideoClient } from "@zoom/videosdk";
 
-  export type Props = WrapperProps;
-
-  const findToolbarContainer = async (element: Element) => {
-    let footer: Element | null | undefined = null;
-    while (!footer) {
-      footer = element.closest("div")?.querySelector(".video-footer");
-      await new Promise((r) => setTimeout(r, 100));
-    }
-    return footer;
-  };
+  export type ZoomClient = typeof VideoClient;
 
   export type Controls = {
     microphone: boolean;
@@ -21,23 +13,46 @@
     liveBroadcast: boolean;
   };
 
+  type Elements = {
+    buttons: { color?: string; activeColor?: string };
+    viewport: { color?: string };
+  };
+
+  export type Props = Omit<WrapperProps, "zoomClient"> & {
+    controls?: Controls;
+    client?: ZoomClient;
+  } & Partial<Elements>;
+
+  /**
+   * Identify the element corresponding to ./feature/video/components/video-footer.tsx
+   * @param element
+   */
+  const findVideoFooter = async (element: Element) => {
+    let footer: Element | null | undefined = null;
+    while (!footer) {
+      footer = element.closest("div")?.querySelector(".video-footer");
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return footer;
+  };
+
+  /**
+   * NOTE: <span> tags have been added to ./feature/video/components/video-footer.tsx
+   * to wrap all "toolbox" buttons.
+   * This function maps their given `id`s to the respective control type.
+   */
   const identifyController = ({
     classList,
     id,
   }: Element): keyof Controls | undefined => {
-    if (!classList.contains("video-tool")) return undefined;
+    if (!classList.contains("zoom-footer-control")) return undefined;
     if (id === "microphone-button") return "microphone";
     else if (id === "camera-button") return "video";
     else if (id === "transcription-button") return "liveTranscription";
     else if (id === "live-broadcast-button") return "liveBroadcast";
     else if (id === "screen-share-button") return "screenShare";
-    else if (id.startsWith("recording-button")) {
-      if (id.endsWith("record")) return "recording";
-      else if (id.endsWith("resume")) return "recording";
-      else if (id.endsWith("pause")) return "recording";
-      else if (id.endsWith("stop")) return "recording";
-      else if (id.endsWith("status")) return "recording";
-    }
+    else if (id.startsWith("recording-button")) return "recording";
+    else if (id === "leave-button") return undefined; // Leave button always available, and thus can't be controlled
     throw new Error(`Unknown toolbar child with id: ${id}`);
   };
 
@@ -56,10 +71,8 @@
     return mapping;
   };
 
-  const supportControl = (child: Element, condition: boolean) =>
-    condition
-      ? child.classList.add("supported")
-      : child.classList.remove("supported");
+  const supportControl = ({ classList }: Element, condition: boolean) =>
+    condition ? classList.add("supported") : classList.remove("supported");
 
   const supportControls = (childs: Element | Element[], condition: boolean) =>
     Array.isArray(childs)
@@ -95,12 +108,13 @@
 
   let {
     controls,
+    client = $bindable(),
+    buttons,
+    viewport,
     ...props
-  }: Omit<Props, "zoomClient"> & {
-    controls?: Controls;
-  } = $props();
+  }: Props = $props();
 
-  const client = ZoomVideo.createClient();
+  client ??= ZoomVideo.createClient();
 
   let container = $state<Element | null>(null);
 
@@ -109,59 +123,59 @@
   $effect(() => {
     if (!videoFooter) return;
     const mapping = createControlsMapping(videoFooter);
-    const controlsSpecified = controls !== undefined;
+    // Apply initial controls state (all supported if controls is undefined)
     Object.values(mapping).forEach((element) =>
-      supportControls(element, !controlsSpecified)
+      supportControls(element, controls === undefined)
     );
     for (const key in controls) {
       const control = key as keyof Controls;
-      let elements = mapping ? mapping[control] : undefined;
-      if (elements)
-        supportControls(elements, controls ? controls[control] : true);
+      const elements = mapping?.[control];
+      if (elements) supportControls(elements, controls?.[control] ?? true);
     }
-  });
-
-  $effect(() => {
-    if (!videoFooter) return;
     return controlAddedToFooterEffect(videoFooter!, controls);
   });
 
   client.on("connection-change", async (payload) => {
     if (payload.state === "Connected") {
-      videoFooter = await findToolbarContainer(container!);
+      videoFooter = await findVideoFooter(container!);
     }
   });
 
   const react = sveltify({ Wrapper }); // Optional step, but adds type-safety
+
+  const videoSupported = $derived(controls ? Boolean(controls.video) : true);
 </script>
 
 <div
   bind:this={container}
-  style:--video-display={controls ? (controls.video ? "flex" : "none") : "flex"}
+  style:width="100%"
+  style:height="100%"
+  class:no-video={!videoSupported}
+  class:style-viewport={viewport?.color}
+  style:--viewport-color={viewport?.color}
+  class:style-buttons={buttons?.color}
+  style:--buttons-color={buttons?.color}
+  class:style-buttons-active={buttons?.activeColor}
+  style:--buttons-active-color={buttons?.activeColor}
 >
   <react.Wrapper {...props} zoomClient={client} />
 </div>
 
 <style>
-  div {
-    width: 100%;
-    height: 100%;
-  }
-
-  :global(div .App) {
+  div :global(.App) {
     position: relative;
     overflow: hidden;
     width: 100% !important;
     height: 100% !important;
   }
 
-  :global(div .viewport) {
+  div :global(.viewport) {
     width: 100% !important;
     height: 100% !important;
     overflow: hidden;
   }
 
-  :global(div .loading-layer) {
+  div :global(.loading-layer) {
     position: absolute !important;
     top: auto !important;
     left: auto !important;
@@ -171,25 +185,65 @@
     height: 100% !important;
   }
 
-  :global(div .video-footer > .video-tool) {
+  div :global(.video-footer > .zoom-footer-control) {
     transition: opacity 0.5s;
   }
 
-  :global(div .video-footer > .video-tool:not(.supported)) {
+  div :global(.video-footer > .zoom-footer-control:not(.supported)) {
     display: none !important;
     opacity: 0 !important;
   }
 
-  :global(div .video-footer > .video-tool.supported) {
+  div :global(.video-footer > .zoom-footer-control.supported),
+  div :global(.video-footer > .zoom-footer-control#leave-button) {
     display: inline-flex !important;
     opacity: 1 !important;
   }
 
-  :global(div .avatar) {
-    display: var(--video-display);
+  .no-video :global(.avatar),
+  .no-video :global(.avatar *),
+  .no-video :global(video-player),
+  .no-video :global(video-player-container),
+  .no-video :global(.unified-self-view) {
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    display: none !important;
+    pointer-events: none !important;
   }
 
-  :global(div video-player, div video-player-container) {
-    display: var(--video-display) !important;
+  .style-viewport :global(.viewport) {
+    background-color: var(--viewport-color) !important;
+  }
+
+  /** Style buttons when not hovered / active (i.e., default color) */
+  .style-buttons :global(.zoom-footer-control:not(:hover) .vc-button),
+  .style-buttons :global(.zoom-footer-control:not(:hover) .ant-btn),
+  .style-buttons :global(.zoom-footer-control:not(:hover) .vc-dropdown-button),
+  .style-buttons :global(.zoom-footer-control:not(:hover) .vc-button path),
+  .style-buttons :global(.zoom-footer-control:not(:hover) .vc-button rect) {
+    color: var(--buttons-color) !important;
+    border-color: var(--buttons-color) !important;
+    fill: var(--buttons-color) !important;
+  }
+
+  .style-buttons :global(.zoom-footer-control:hover .vc-button),
+  .style-buttons :global(.zoom-footer-control:hover .ant-btn),
+  .style-buttons :global(.zoom-footer-control:hover .vc-dropdown-button),
+  .style-buttons :global(.zoom-footer-control:hover .vc-button path),
+  .style-buttons :global(.zoom-footer-control:hover .vc-button rect) {
+    color: green !important;
+    border-color: red !important;
+    fill: blue !important;
+  }
+
+  .style-buttons
+    :global(.zoom-footer-control:hover .vc-dropdown-button .ant-btn) {
+    color: orange !important;
+  }
+
+  .style-buttons
+    :global(.zoom-footer-control:hover .vc-dropdown-button .ant-btn:hover) {
+    color: green !important;
   }
 </style>
