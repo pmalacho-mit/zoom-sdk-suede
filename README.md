@@ -1,8 +1,8 @@
 # Zoom-sdk-suede
 
-This repo is a [suede dependency](https://github.com/pmalacho-mit/suede). 
+This repo is a [suede dependency](https://github.com/pmalacho-mit/suede).
 
-To see the installable source code, please checkout the [dist branch](https://github.com/pmalacho-mit/zoom-sdk-suede/tree/dist).
+To see the installable source code, please checkout the [release branch](https://github.com/pmalacho-mit/zoom-sdk-suede/tree/release).
 
 ## Installation (SSH)
 

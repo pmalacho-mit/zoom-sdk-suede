@@ -2,7 +2,7 @@
 
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REFERENCE_DIR="${SCRIPTS_DIR}/../reference/videosdk-web-sample"
-DEST_DIR="${SCRIPTS_DIR}/../dist"
+DEST_DIR="${SCRIPTS_DIR}/../release"
 REACT_ROUTER_STUB_PATH="$DEST_DIR/react-router.stub.ts"
 
 # Array of supported react-router functions
@@ -129,7 +129,7 @@ if [ ! -d "$REFERENCE_DIR/node_modules" ]; then
   npm install --prefix "$REFERENCE_DIR"
 fi
 
-if [ ! -d "$REFERENCE_DIR/dist" ]; then
+if [ ! -d "$REFERENCE_DIR/release" ]; then
   echo "Building project in $REFERENCE_DIR..."
   npm run build --prefix "$REFERENCE_DIR"
 fi
@@ -137,7 +137,7 @@ fi
 # Map of source directories/files to destination paths
 declare -A FILE_MAP=(
   # Custom remappings (built assets)
-  ["dist/assets/processors"]="assets/static/processors"
+  ["release/assets/processors"]="assets/static/processors"
 )
 
 # Standard src/ to root mappings
