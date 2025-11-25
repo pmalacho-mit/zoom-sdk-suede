@@ -1,5 +1,18 @@
+import preprocessReact from "svelte-preprocess-react/preprocessReact";
 import path from "node:path";
 import dirname, { suederoot } from "./dirname.js";
+
+/**
+ * NOTE: This function appends `preprocessReact()` to your list of preprocessors.
+ * `preprocessReact()` MUST BE the last preprocessor in the list.
+ * See {@link https://github.com/bfanger/svelte-preprocess-react?tab=readme-ov-file#setup--installation}
+ * @param  {import("svelte/compiler").PreprocessorGroup[]} preprocessors
+ * @returns
+ */
+export const preprocess = (...preprocessors) => [
+  ...preprocessors,
+  preprocessReact(),
+];
 
 /**
  * @typedef {Object} TSConfig
