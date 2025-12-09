@@ -74,7 +74,3 @@ export const plugins = ({ assetDir }) => [
   plugin.copyProcessorsToAssets(assetDir),
   plugin.svgr,
 ];
-
-export const build = {
-  outDir: "suede",
-};
