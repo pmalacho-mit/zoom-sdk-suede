@@ -8,7 +8,7 @@
   let name = $state(
     `User_${Math.random().toString(36).substring(2, 8)}_${navigator.userAgent}`
   );
-  let topic = $state("Local Credentials Test");
+  let topic = $state(`Local Credentials Test (${new Date().toISOString()})`);
   const signature = $derived(generateVideoToken(sdk.key, sdk.secret, topic));
 
   type Control = keyof Controls;
@@ -92,6 +92,7 @@
       <input type="color" bind:value={buttons.activeColor} />
     </label>
   </div>
+
   {#if !joined}
     <center>
       <label>Meeting topic: <input bind:value={topic} /></label>
@@ -99,10 +100,9 @@
       <button onclick={() => (joined = true)}> Join Meeting </button>
     </center>
   {/if}
-  <div style:height="15%" style:width="75%">
+  <div style:height="50%" style:width="75%">
     {#if joined}
       <Zoom
-        bind:client
         meetingArgs={{ name, topic, signature }}
         {controls}
         viewport={{ color: viewport.useColor ? viewport.color : undefined }}
@@ -110,6 +110,7 @@
           color: buttons.useColor ? buttons.color : undefined,
           activeColor: buttons.useActiveColor ? buttons.activeColor : undefined,
         }}
+        onLeave={() => (joined = false)}
       />
     {/if}
   </div>
