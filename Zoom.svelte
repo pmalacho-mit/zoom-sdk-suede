@@ -4,14 +4,14 @@
 
   export type ZoomClient = typeof VideoClient;
 
-  export type Controls = Partial<{
+  export type Controls = {
     microphone: boolean;
     video: boolean;
     recording: boolean;
     screenShare: boolean;
     liveTranscription: boolean;
     liveBroadcast: boolean;
-  }>;
+  };
 
   type Elements = {
     buttons: { color?: string; activeColor?: string };
