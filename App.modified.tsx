@@ -168,20 +168,6 @@ function App(props: AppProps) {
   const vbWithoutSAB = Number(enforceVB) === 1 && !window.crossOriginIsolated;
   const galleryViewWithAttach = true;
 
-  if (galleryViewWithAttach) {
-    console.log({
-      galleryViewWithAttach,
-      use: "<video-player-container> video tag render video",
-      doc: "https://marketplacefront.zoom.us/sdk/custom/web/modules/Stream.html#attachVideo",
-    });
-  } else {
-    console.log({
-      galleryViewWithAttach,
-      use: "<canvas>",
-      doc: "https://marketplacefront.zoom.us/sdk/custom/web/modules/Stream.html#startVideo",
-    });
-  }
-
   useEffect(() => {
     if (hasInitialized.current) {
       return;
@@ -193,12 +179,12 @@ function App(props: AppProps) {
         enforceVirtualBackground: vbWithoutSAB,
         stayAwake: true,
         patchJsMedia: true,
-        leaveOnPageUnload: false,
+        leaveOnPageUnload: true,
       });
       try {
         setLoadingText("Joining the session...");
         await zmClient.join(topic, signature, name, password).catch((e) => {
-          console.log(e);
+          console.error(e);
         });
         const stream = zmClient.getMediaStream();
         setMediaStream(stream);
@@ -208,6 +194,7 @@ function App(props: AppProps) {
         setIsLoading(false);
         message.error(e.reason);
       }
+      hasInitialized.current = true;
     };
     init();
     return () => {
@@ -282,16 +269,6 @@ function App(props: AppProps) {
     dispatch({ type: `${type}-${action}`, payload: result === "success" });
   }, []);
 
-  const onLeaveOrJoinSession = useCallback(async () => {
-    if (status === "closed") {
-      setIsLoading(true);
-      await zmClient.join(topic, signature, name, password);
-      setIsLoading(false);
-    } else if (status === "connected") {
-      await zmClient.leave();
-      message.warn("You have left the session.");
-    }
-  }, [zmClient, status, topic, signature, name, password]);
   useEffect(() => {
     zmClient.on("connection-change", onConnectionChange);
     zmClient.on("media-sdk-change", onMediaSDKChange);
@@ -300,7 +277,6 @@ function App(props: AppProps) {
       zmClient.off("media-sdk-change", onMediaSDKChange);
     };
   }, [zmClient, onConnectionChange, onMediaSDKChange]);
-  console.log({ isSupportGalleryView, galleryViewWithAttach });
   return (
     <div className="App">
       {loading && <LoadingLayer content={loadingText} />}

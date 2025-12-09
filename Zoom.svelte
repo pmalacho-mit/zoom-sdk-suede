@@ -1,6 +1,6 @@
 <script lang="ts" module>
   import type { Props as WrapperProps } from "./index.modified";
-  import type { VideoClient } from "@zoom/videosdk";
+  import type { ConnectionChangePayload, VideoClient } from "@zoom/videosdk";
 
   export type ZoomClient = typeof VideoClient;
 
@@ -18,9 +18,9 @@
     viewport: { color?: string };
   };
 
-  export type Props = Omit<WrapperProps, "zoomClient"> & {
+  export type Props = Omit<WrapperProps, "zoomClient" | "active"> & {
     controls?: Controls;
-    client?: ZoomClient;
+    onLeave?: () => void;
   } & Partial<Elements>;
 
   /**
@@ -105,20 +105,15 @@
   import { sveltify } from "svelte-preprocess-react";
   import { Wrapper } from "./index.modified";
   import ZoomVideo from "@zoom/videosdk";
+  import { flushSync, onDestroy } from "svelte";
 
-  let {
-    controls,
-    client = $bindable(),
-    buttons,
-    viewport,
-    ...props
-  }: Props = $props();
+  let { controls, buttons, viewport, onLeave, ...props }: Props = $props();
 
-  client ??= ZoomVideo.createClient();
+  const client = ZoomVideo.createClient();
 
   let container = $state<Element | null>(null);
-
   let videoFooter = $state<Element | null>(null);
+  let left = $state(false);
 
   $effect(() => {
     if (!videoFooter) return;
@@ -135,31 +130,60 @@
     return controlAddedToFooterEffect(videoFooter!, controls);
   });
 
-  client.on("connection-change", async (payload) => {
-    if (payload.state === "Connected") {
-      videoFooter = await findVideoFooter(container!);
+  const dispose = () => {
+    client.init = (...args) =>
+      Promise.reject({
+        code: -1,
+        type: "INVALID_OPERATION",
+        message:
+          "(Custom) Client has been disposed, should not be re-inited. Instead render a new Zoom component.",
+      });
+    ZoomVideo.destroyClient().catch((e) => {
+      console.error("Error destroying ZoomVideo client:", e);
+    });
+  };
+
+  const onConnectionChange = async (payload: ConnectionChangePayload) => {
+    switch (payload.state) {
+      case "Closed":
+        flushSync(() => (left = true));
+        onLeave?.();
+        dispose();
+        break;
+      case "Connected":
+        videoFooter = await findVideoFooter(container!);
+        break;
     }
+  };
+
+  $effect(() => {
+    client?.on("connection-change", onConnectionChange);
+    return () => client?.off("connection-change", onConnectionChange);
   });
 
   const react = sveltify({ Wrapper }); // Optional step, but adds type-safety
 
   const videoSupported = $derived(controls ? Boolean(controls.video) : true);
+
+  onDestroy(dispose);
 </script>
 
-<div
-  bind:this={container}
-  style:width="100%"
-  style:height="100%"
-  class:no-video={!videoSupported}
-  class:style-viewport={viewport?.color}
-  style:--viewport-color={viewport?.color}
-  class:style-buttons={buttons?.color}
-  style:--buttons-color={buttons?.color}
-  class:style-buttons-active={buttons?.activeColor}
-  style:--buttons-active-color={buttons?.activeColor}
->
-  <react.Wrapper {...props} zoomClient={client} />
-</div>
+{#if !left}
+  <div
+    bind:this={container}
+    style:width="100%"
+    style:height="100%"
+    class:no-video={!videoSupported}
+    class:style-viewport={viewport?.color}
+    style:--viewport-color={viewport?.color}
+    class:style-buttons={buttons?.color}
+    style:--buttons-color={buttons?.color}
+    class:style-buttons-active={buttons?.activeColor}
+    style:--buttons-active-color={buttons?.activeColor}
+  >
+    <react.Wrapper {...props} zoomClient={client} active={!left} />
+  </div>
+{/if}
 
 <style>
   div :global(.App) {
@@ -232,18 +256,18 @@
   .style-buttons :global(.zoom-footer-control:hover .vc-dropdown-button),
   .style-buttons :global(.zoom-footer-control:hover .vc-button path),
   .style-buttons :global(.zoom-footer-control:hover .vc-button rect) {
-    color: green !important;
-    border-color: red !important;
-    fill: blue !important;
+    color: var(--buttons-active-color) !important;
+    border-color: var(--buttons-active-color) !important;
+    fill: var(--buttons-active-color) !important;
   }
 
   .style-buttons
     :global(.zoom-footer-control:hover .vc-dropdown-button .ant-btn) {
-    color: orange !important;
+    color: var(--buttons-color) !important;
   }
 
   .style-buttons
     :global(.zoom-footer-control:hover .vc-dropdown-button .ant-btn:hover) {
-    color: green !important;
+    color: var(--buttons-active-color) !important;
   }
 </style>

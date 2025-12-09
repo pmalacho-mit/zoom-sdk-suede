@@ -4,13 +4,16 @@ import type { VideoClient } from "@zoom/videosdk";
 import App, { type AppProps } from "./App.modified";
 import ZoomContext from "./context/zoom-context";
 
-export type Props = AppProps & { zoomClient: typeof VideoClient };
+export type Props = AppProps & {
+  zoomClient: typeof VideoClient;
+  active: boolean;
+};
 
-export const Wrapper = ({ zoomClient, ...props }: Props) => {
+export const Wrapper = ({ zoomClient, active, ...props }: Props) => {
   return (
     <React.StrictMode>
       <ZoomContext.Provider value={zoomClient}>
-        <App {...props} />
+        {active && <App {...props} />}
       </ZoomContext.Provider>
     </React.StrictMode>
   );
